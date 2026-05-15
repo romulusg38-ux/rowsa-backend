@@ -196,6 +196,27 @@ def get_club_athletes(token: str = Depends(oauth2_scheme), db: Session = Depends
     except:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+# ====================== SUPER ADMIN (Temporary for Beta) ======================
+@app.post("/super/promote-to-admin/{user_id}")
+def promote_to_admin(user_id: int, secret_key: str = "rowsa-beta-2026", db: Session = Depends(get_db)):
+    """Temporary super admin endpoint - use with care"""
+    if secret_key != "rowsa-beta-2026":   # Change this secret later
+        raise HTTPException(status_code=403, detail="Invalid secret key")
+    
+    user = db.query(Athlete).filter(Athlete.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    old_role = user.role
+    user.role = "club_admin"
+    db.commit()
+    
+    return {
+        "message": f"User {user.full_name} ({user.email}) promoted from '{old_role}' to 'club_admin'",
+        "user_id": user.id,
+        "email": user.email
+    }
+
 @app.post("/admin/approve-athlete/{athlete_id}")
 def approve_athlete(athlete_id: int, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
